@@ -1,173 +1,262 @@
-document.getElementById("imageInput").addEventListener("change", function (event) {
-  const img = document.getElementById("uploadedImage");
-  const file = event.target.files[0];
+const image = document.getElementById("image");
+const imageInput = document.querySelector(".image-input");
+const startPanel = document.querySelector(".start-panel");
 
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      img.src = e.target.result;
-      img.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-  }
-});
+const dropArea = document.querySelector("#drop-area");
+dropArea.addEventListener("mousedown", startDrag);
+dropArea.addEventListener("mousemove", drag);
+dropArea.addEventListener("mouseup", stopDrag);
+dropArea.addEventListener("mouseleave", stopDrag);
+dropArea.addEventListener("wheel", (e) => zoom(e.deltaY));
 
-const imageContainer = document.getElementById("imageContainer");
-const measurementBox = document.getElementById("measurementBox");
+let dragging = false;
+
+let distanceX = 0;
+let distanceY = 0;
+
+let isFillScreen = false;
+let animationInterval = null;
+let animated = false;
+
+const box = document.getElementById("box");
+const handle = document.querySelector(".resize-handle");
 const sizeLabel = document.getElementById("sizeLabel");
 
-let startX,
-  startY,
-  isDrawing = false;
-let isDragging = false,
-  offsetX = 0,
-  offsetY = 0;
-let boxVisible = true;
-let isResizing = false,
-  activeHandle = null;
+let isDragging = false;
+let isResizing = false;
+let startX, startY, startWidth, startHeight, offsetX, offsetY;
+const minSize = 50; // Minimum width and height
 
-function updateSizeLabel() {
-  sizeLabel.innerText = `${measurementBox.offsetWidth} x ${measurementBox.offsetHeight}`;
+function startDrag(e) {
+  if (animated) stopAnimation();
+
+  dragging = true;
+
+  document.body.style.cursor = "grabbing";
+
+  let rect = image.getBoundingClientRect();
+  distanceX = e.clientX - rect.x;
+  distanceY = e.clientY - rect.y;
 }
 
-imageContainer.addEventListener("mousedown", function (event) {
-  const img = document.getElementById("uploadedImage");
-  if (!img || img.style.display === "none") return;
+function drag(e) {
+  if (!dragging) return;
 
-  const rect = img.getBoundingClientRect();
-  startX = event.clientX - rect.left;
-  startY = event.clientY - rect.top;
+  const posX = `${e.clientX - distanceX + image.clientWidth / 2}px`;
+  const posY = `${e.clientY - distanceY + image.clientHeight / 2}px`;
+  setImagePosition(posX, posY);
+}
 
-  if (event.target.classList.contains("resize-handle")) {
-    isResizing = true;
-    activeHandle = event.target;
-    return;
+function stopDrag() {
+  dragging = false;
+  document.body.style.cursor = "grab";
+}
+
+function setImagePosition(left, top) {
+  image.style.left = left;
+  image.style.top = top;
+}
+
+function moveImage(x, y) {
+  const left = `${parseFloat(getComputedStyle(image).left) + x}px`;
+  const top = `${parseFloat(getComputedStyle(image).top) + y}px`;
+
+  setImagePosition(left, top);
+}
+
+function resizeImage(width, height) {
+  image.style.width = width;
+  image.style.height = height;
+}
+
+function zoom(direction) {
+  if (animated) stopAnimation();
+
+  const scale = direction > 0 ? 0.9 : 1.1; // adjust the zoom speed as needed
+
+  resizeImage(`${image.width * scale}px`, `${image.height * scale}px`);
+}
+
+function fillScreen() {
+  isFillScreen = true;
+  const screenRatio = window.innerWidth / window.innerHeight;
+  resizeImage("100px", "auto");
+  const imgRatio = image.width / image.height;
+  const width = screenRatio > imgRatio ? "100%" : "auto";
+  const height = screenRatio > imgRatio ? "auto" : "100%";
+  resizeImage(width, height);
+
+  setImagePosition("50%", "50%");
+}
+
+function fitScreen() {
+  isFillScreen = false;
+  resizeImage("100%", "100%");
+  setImagePosition("50%", "50%");
+}
+
+function handleDragOver(event) {
+  event.preventDefault();
+}
+function handleDrop(event) {
+  event.preventDefault();
+
+  const files = event.dataTransfer.files;
+  handleFile(files);
+}
+
+async function handleFile(files) {
+  try {
+    if (files.length <= 0) return;
+
+    const imageFile = files[0];
+
+    if (!imageFile.type.startsWith("image/")) return;
+
+    const imageUrl = await readFile(imageFile);
+    displayImage(imageUrl);
+  } catch (error) {
+    console.error(error);
   }
+}
 
-  if (event.target === measurementBox) {
-    isDragging = true;
-    offsetX = event.clientX - measurementBox.offsetLeft;
-    offsetY = event.clientY - measurementBox.offsetTop;
-    return;
+function displayImage(imageUrl) {
+  image.classList.remove("hidden");
+  image.src = imageUrl;
+  startPanel.classList.add("hidden");
+  fillScreen();
+}
+
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+      resolve(e.target.result);
+    };
+
+    reader.onerror = function (error) {
+      reject(error);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else {
+    document.body.requestFullscreen();
   }
+}
 
-  isDrawing = true;
-  measurementBox.style.left = startX + "px";
-  measurementBox.style.top = startY + "px";
-  measurementBox.style.width = "0px";
-  measurementBox.style.height = "0px";
-  measurementBox.style.display = "block";
-  boxVisible = true;
+function startAnimation() {
+  animated = true;
+  fillScreen();
+  resizeImage(`${image.width + 10}px`, `${image.height + 10}px`);
+  image.style.transition = "1s";
 
-  function updateSize(event) {
-    if (!isDrawing) return;
+  clearInterval(animationInterval);
+  animationInterval = setInterval(animation, 500);
+}
 
-    let currentX = event.clientX - rect.left;
-    let currentY = event.clientY - rect.top;
-    let width = Math.abs(currentX - startX);
-    let height = Math.abs(currentY - startY);
+function stopAnimation() {
+  animated = false;
+  image.style.transition = null;
+  clearInterval(animationInterval);
+}
 
-    if (width < 15 || height < 15) {
-      measurementBox.style.display = "none";
-      return;
-    }
+function animation() {
+  const x = Math.random() * 12 - 6;
+  const y = Math.random() * 12 - 6;
+  const scale = 1 + Math.random() * 0.01;
 
-    measurementBox.style.display = "block";
-    measurementBox.style.width = width + "px";
-    measurementBox.style.height = height + "px";
-
-    measurementBox.style.left = currentX < startX ? currentX + "px" : startX + "px";
-    measurementBox.style.top = currentY < startY ? currentY + "px" : startY + "px";
-
-    updateSizeLabel();
-  }
-
-  function stopDrawing() {
-    isDrawing = false;
-    let width = measurementBox.offsetWidth;
-    let height = measurementBox.offsetHeight;
-
-    if (width < 15 || height < 15) {
-      measurementBox.style.display = "none";
-    }
-
-    imageContainer.removeEventListener("mousemove", updateSize);
-    imageContainer.removeEventListener("mouseup", stopDrawing);
-  }
-
-  imageContainer.addEventListener("mousemove", updateSize);
-  imageContainer.addEventListener("mouseup", stopDrawing);
-});
-
-imageContainer.addEventListener("mousemove", function (event) {
-  if (isDragging) {
-    measurementBox.style.left = event.clientX - offsetX + "px";
-    measurementBox.style.top = event.clientY - offsetY + "px";
-    return;
-  }
-
-  if (isResizing && activeHandle) {
-    let boxRect = measurementBox.getBoundingClientRect();
-    let imgRect = document.getElementById("uploadedImage").getBoundingClientRect();
-    let newX = event.clientX - imgRect.left;
-    let newY = event.clientY - imgRect.top;
-
-    let newWidth, newHeight;
-
-    if (activeHandle.classList.contains("top-left")) {
-      newWidth = boxRect.right - event.clientX;
-      newHeight = boxRect.bottom - event.clientY;
-      if (newWidth >= 15) {
-        measurementBox.style.left = newX + "px";
-        measurementBox.style.width = newWidth + "px";
-      }
-      if (newHeight >= 15) {
-        measurementBox.style.top = newY + "px";
-        measurementBox.style.height = newHeight + "px";
-      }
-    } else if (activeHandle.classList.contains("top-right")) {
-      newWidth = event.clientX - boxRect.left;
-      newHeight = boxRect.bottom - event.clientY;
-      if (newWidth >= 15) measurementBox.style.width = newWidth + "px";
-      if (newHeight >= 15) {
-        measurementBox.style.top = newY + "px";
-        measurementBox.style.height = newHeight + "px";
-      }
-    } else if (activeHandle.classList.contains("bottom-left")) {
-      newWidth = boxRect.right - event.clientX;
-      newHeight = event.clientY - boxRect.top;
-      if (newWidth >= 15) {
-        measurementBox.style.left = newX + "px";
-        measurementBox.style.width = newWidth + "px";
-      }
-      if (newHeight >= 15) measurementBox.style.height = newHeight + "px";
-    } else if (activeHandle.classList.contains("bottom-right")) {
-      newWidth = event.clientX - boxRect.left;
-      newHeight = event.clientY - boxRect.top;
-      if (newWidth >= 15) measurementBox.style.width = newWidth + "px";
-      if (newHeight >= 15) measurementBox.style.height = newHeight + "px";
-    }
-
-    updateSizeLabel();
-  }
-});
-
-imageContainer.addEventListener("mouseup", function () {
-  isDragging = false;
-  isResizing = false;
-  activeHandle = null;
-
-  if (measurementBox.offsetWidth < 15 || measurementBox.offsetHeight < 15) {
-    measurementBox.style.display = "none";
-  }
-});
+  moveImage(x, y);
+  image.style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
 
 document.addEventListener("keydown", function (event) {
-  if (event.code === "Space") {
-    boxVisible = !boxVisible;
-    measurementBox.style.display = boxVisible ? "block" : "none";
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+    event.preventDefault();
+  }
+
+  if (event.code === "KeyF") toggleFullscreen();
+  if (event.code === "KeyC") isFillScreen ? fitScreen() : fillScreen();
+  if (event.code === "KeyA") animated ? stopAnimation() : startAnimation();
+
+  if (event.code === "Equal" || event.code === "BracketRight") zoom(-1);
+  if (event.code === "Minus" || event.code === "BracketLeft") zoom(1);
+
+  switch (event.key) {
+    case "ArrowUp":
+      moveImage(0, -10);
+      break;
+    case "ArrowDown":
+      moveImage(0, 10);
+      break;
+    case "ArrowLeft":
+      moveImage(-10, 0);
+      break;
+    case "ArrowRight":
+      moveImage(10, 0);
+      break;
+    default:
+      break;
   }
 });
+
+// Move box
+box.addEventListener("mousedown", (e) => {
+  if (e.target === handle) return; // Prevent dragging when resizing
+  isDragging = true;
+  offsetX = e.clientX - box.offsetLeft;
+  offsetY = e.clientY - box.offsetTop;
+  box.style.cursor = "grabbing";
+});
+
+// Resize box
+handle.addEventListener("mousedown", (e) => {
+  isResizing = true;
+  startX = e.clientX;
+  startY = e.clientY;
+  startWidth = box.offsetWidth;
+  startHeight = box.offsetHeight;
+  e.stopPropagation();
+});
+
+// Mouse move event
+document.addEventListener("mousemove", (e) => {
+  if (isDragging) {
+    box.style.left = `${e.clientX - offsetX}px`;
+    box.style.top = `${e.clientY - offsetY}px`;
+  }
+
+  if (isResizing) {
+    let newWidth = startWidth + (e.clientX - startX);
+    let newHeight = startHeight + (e.clientY - startY);
+
+    // Prevent negative/too small sizes
+    newWidth = Math.max(newWidth, minSize);
+    newHeight = Math.max(newHeight, minSize);
+
+    box.style.width = `${newWidth}px`;
+    box.style.height = `${newHeight}px`;
+    updateSizeLabel(newWidth, newHeight);
+  }
+});
+
+// Mouse up event (stop dragging or resizing)
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+  isResizing = false;
+  box.style.cursor = "grab";
+});
+
+// Update the size label text
+function updateSizeLabel(width, height) {
+  sizeLabel.textContent = `${width} x ${height}`;
+}
 
 window.addEventListener("error", (event) => {
   const error = `${event.type}: ${event.message}`;

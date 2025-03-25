@@ -1,72 +1,121 @@
+/*==================== GOOGLE FONTS ====================*/
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+/*==================== BOOTSTRAP ICONS ====================*/
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+  outline: none;
+  user-select: none;
+}
+
+html,
 body {
-  font-family: Arial, sans-serif;
-  user-select: none; /* Prevents text selection */
-  background-color: black;
+  overflow: hidden;
+  width: 100%;
+  height: 100vh;
+}
+
+body {
+  cursor: grab;
+  font-family: "Poppins", sans-serif;
+  background-color: #111;
   color: white;
 }
 
-#imageContainer {
-  position: relative;
-  display: inline-block;
-  max-width: 100%;
+.hidden {
+  display: none !important;
 }
 
-#uploadedImage {
-  display: none;
-  max-width: 100%;
-  cursor: crosshair;
-  pointer-events: none; /* Prevents image drag */
+#image {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  user-select: none;
+  transform: translate(-50%, -50%);
 }
 
-#measurementBox {
-  position: absolute;
-  border: 2px solid blue;
-  background: rgba(0, 0, 255, 0.3);
-  display: none;
-  cursor: grab; /* Drag cursor */
-}
-
-#measurementBox:active {
-  cursor: grabbing;
-}
-
-#sizeLabel {
-  position: absolute;
-  background: black;
-  color: white;
-  padding: 2px 5px;
-  font-size: 12px;
-  top: -20px;
+#drop-area {
+  position: fixed;
   left: 0;
-  white-space: nowrap;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-panel {
+  position: relative;
+  width: 300px;
+  min-height: 200px;
+  background-color: #6e99f3;
+  color: #333;
+  border: 5px dashed white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-panel .icon {
+  color: white;
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+.image-input {
+  background-color: #333;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.start-panel .tips {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 20px);
+  transform: translateX(-50%);
+  width: 100%;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #ccc;
+}
+
+.box {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  background-color: rgba(0, 0, 255, 0.3);
+  border: 2px solid blue;
+  cursor: grab;
 }
 
 .resize-handle {
+  width: 15px;
+  height: 15px;
+  background-color: blue;
   position: absolute;
-  width: 10px;
-  height: 10px;
-  background: blue;
-  border-radius: 50%;
-  cursor: pointer;
+  right: 0;
+  bottom: 0;
+  cursor: se-resize;
 }
 
-.top-left {
-  top: -5px;
-  left: -5px;
-  cursor: nwse-resize;
-}
-.top-right {
-  top: -5px;
-  right: -5px;
-  cursor: nesw-resize;
-}
-.bottom-left {
-  bottom: -5px;
-  left: -5px;
-  cursor: nesw-resize;
-}
-.bottom-right {
-  bottom: -5px;
-  right: -5px;
-  cursor: nwse-resize;
+.size-label {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: black;
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
 }

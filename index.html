@@ -3,23 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Image Ruler</title>
+    <title>Movable & Resizable Box</title>
     <link rel="icon" href="favicon.png" type="image/x-icon" />
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon" />
     <link rel="stylesheet" href="style.css" />
     <script src="script.js" defer></script>
   </head>
   <body>
-    <input type="file" id="imageInput" accept="image/*" />
-    <div id="imageContainer">
-      <img id="uploadedImage" alt="Upload an image" />
-      <div id="measurementBox">
-        <span id="sizeLabel"></span>
-        <div class="resize-handle top-left"></div>
-        <div class="resize-handle top-right"></div>
-        <div class="resize-handle bottom-left"></div>
-        <div class="resize-handle bottom-right"></div>
+    <div id="drop-area" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
+      <img id="image" draggable="false" class="hidden" />
+      <div class="start-panel">
+        <i class="bi bi-image icon"></i>
+        <label class="image-input">
+          Select Image
+          <input type="file" class="hidden" oninput="handleFile(this.files)" />
+        </label>
+        <p class="msg">or, drag and drop an image here</p>
+        <div class="tips">Keyboard shortcuts: Toggle full screen (f), Cover (c), Pan (→ ← ↑ ↓), Zoom (- + [ ]), Animation (a)</div>
       </div>
+    </div>
+
+    <div id="box" class="box" ondragover="handleDragOver(event)">
+      <div class="size-label" id="sizeLabel">150 x 150</div>
+      <div class="resize-handle"></div>
     </div>
   </body>
 </html>
