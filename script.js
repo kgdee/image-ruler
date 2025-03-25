@@ -18,7 +18,7 @@ let isFillScreen = false;
 let animationInterval = null;
 let animated = false;
 
-const box = document.getElementById("box");
+const ruler = document.querySelector(".ruler")
 const handle = document.querySelector(".resize-handle");
 const sizeLabel = document.getElementById("sizeLabel");
 
@@ -207,12 +207,12 @@ document.addEventListener("keydown", function (event) {
 });
 
 // Move box
-box.addEventListener("mousedown", (e) => {
+ruler.addEventListener("mousedown", (e) => {
   if (e.target === handle) return; // Prevent dragging when resizing
   isDragging = true;
-  offsetX = e.clientX - box.offsetLeft;
-  offsetY = e.clientY - box.offsetTop;
-  box.style.cursor = "grabbing";
+  offsetX = e.clientX - ruler.offsetLeft;
+  offsetY = e.clientY - ruler.offsetTop;
+  ruler.style.cursor = "grabbing";
 });
 
 // Resize box
@@ -220,16 +220,16 @@ handle.addEventListener("mousedown", (e) => {
   isResizing = true;
   startX = e.clientX;
   startY = e.clientY;
-  startWidth = box.offsetWidth;
-  startHeight = box.offsetHeight;
+  startWidth = ruler.offsetWidth;
+  startHeight = ruler.offsetHeight;
   e.stopPropagation();
 });
 
 // Mouse move event
 document.addEventListener("mousemove", (e) => {
   if (isDragging) {
-    box.style.left = `${e.clientX - offsetX}px`;
-    box.style.top = `${e.clientY - offsetY}px`;
+    ruler.style.left = `${e.clientX - offsetX}px`;
+    ruler.style.top = `${e.clientY - offsetY}px`;
   }
 
   if (isResizing) {
@@ -240,8 +240,8 @@ document.addEventListener("mousemove", (e) => {
     newWidth = Math.max(newWidth, minSize);
     newHeight = Math.max(newHeight, minSize);
 
-    box.style.width = `${newWidth}px`;
-    box.style.height = `${newHeight}px`;
+    ruler.style.width = `${newWidth}px`;
+    ruler.style.height = `${newHeight}px`;
     updateSizeLabel(newWidth, newHeight);
   }
 });
@@ -250,7 +250,7 @@ document.addEventListener("mousemove", (e) => {
 document.addEventListener("mouseup", () => {
   isDragging = false;
   isResizing = false;
-  box.style.cursor = "grab";
+  ruler.style.cursor = "grab";
 });
 
 // Update the size label text
